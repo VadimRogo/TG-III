@@ -63,7 +63,7 @@ def BuyOrder():
         global tikets
         eth_price = client.get_symbol_ticker(symbol="ETHUSDT")
         if float(MainBalanceUSD['free']) > 10:
-            buy_quantity = round(float(MainBalanceUSD['free']) / float(eth_price['price'])/2, 3)
+            buy_quantity = math.floor((float(MainBalanceUSD['free']) / float(eth_price['price']))* 1000) / 1000
             
             tiket = Tik.MakingTiket(random.randint(100, 1000), 'ETHUSDT', buy_quantity, eth_price, False) 
             order = client.create_order(
@@ -74,25 +74,34 @@ def BuyOrder():
                 )
     except Exception as inst:
         print(inst)
+        print(buy_quantity)
 
 
-def SellOrder(tikets):
-    
-    for i in tikets:
-        print(i['quantity'])
-        # if i['sell'] == False:
-        #     order = client.create_test_order(
-        #     symbol='ETHUSDT',
-        #     side=Client.SIDE_SELL,
-        #     type=Client.ORDER_TYPE_MARKET,
-        #     quantity=i['quantity']
-        #     )
+def SellOrder():
+    try:
+        quantityETH = math.floor((float(client.get_asset_balance(asset='ETH')['free'])) * 1000) / 1000
+        order = client.create_order(
+            symbol='ETHUSDT',
+            side=Client.SIDE_SELL,
+            type=Client.ORDER_TYPE_MARKET,
+            quantity = quantityETH
+            )
+    except Exception as inst:
+        print(inst)
+
+# buy_quantity = math.floor((float(MainBalanceUSD['free']) / float(eth_price['price']))* 1000) / 1000
+# print(buy_quantity)
+
+
+
 
 
 while True:
+
     BuyOrder()
-    SellOrder(tikets)
     time.sleep(6)
+    SellOrder()
+    
  # T
 
 
