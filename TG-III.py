@@ -34,10 +34,11 @@ exchange_info = client.get_exchange_info()
 eth_price = client.get_symbol_ticker(symbol="ETHUSDT")
 tikets = []
 
-buy_quantity = float(MainBalanceUSD['free']) / float(eth_price['price'])
-buy_quantity = round(buy_quantity/2, 3)
-print(buy_quantity)
+# buy_quantity = float(MainBalanceUSD['free']) / float(eth_price['price'])
+# buy_quantity = round(buy_quantity/2, 3)
+# print(buy_quantity)
 
+priceBUY = 0
 
 # Create test order
 class Tik:
@@ -60,26 +61,31 @@ class Tik:
         
 def BuyOrder():
     try:
-        global tikets
-        eth_price = client.get_symbol_ticker(symbol="ETHUSDT")
+         
+        eth_price = float(client.get_symbol_ticker(symbol="ETHUSDT")['price'])
+        global priceBUY
+        priceBUY = eth_price
+        
         if float(MainBalanceUSD['free']) > 10:
-            buy_quantity = math.floor((float(MainBalanceUSD['free']) / float(eth_price['price']))* 1000) / 1000
+            buy_quantity = math.floor((MainBalanceUSD / eth_price) * 1000) / 1000
             
-            tiket = Tik.MakingTiket(random.randint(100, 1000), 'ETHUSDT', buy_quantity, eth_price, False) 
+            # tiket = Tik.MakingTiket(random.randint(100, 1000), 'ETHUSDT', buy_quantity, eth_price, False) 
             order = client.create_order(
                 symbol='ETHUSDT',
                 side=Client.SIDE_BUY,
                 type=Client.ORDER_TYPE_MARKET,
                 quantity=buy_quantity
                 )
+        
     except Exception as inst:
         print(inst)
-        print(buy_quantity)
 
-
+        
+        
 def SellOrder():
     try:
-        quantityETH = math.floor((float(client.get_asset_balance(asset='ETH')['free'])) * 1000) / 1000
+        quantityETH = float(client.get_asset_balance(asset='ETH')['free']) * 1000
+        quantityETH = math.floor(quantityETH) / 1000
         order = client.create_order(
             symbol='ETHUSDT',
             side=Client.SIDE_SELL,
@@ -93,20 +99,10 @@ def SellOrder():
 # print(buy_quantity)
 
 
-
-
-
 while True:
-
+    priceNOW = float(client.get_symbol_ticker(symbol="ETHUSDT")['price'])
     BuyOrder()
-    time.sleep(6)
+    time.sleep(10)
     SellOrder()
-    
- # T
 
 
-# for s in exchange_info['symbols']:
-#     print(s['symbol'])
-#     balance = client.get_asset_balance(asset=s['symbol'])
-#     print(balance)
-#     # print(s['symbol'])
