@@ -43,12 +43,14 @@ class Indicators():
         if price == max(prices):
             Processes.SellProcess(price, MainBalanceUSD, MainBalanceBTC)
 
-    def CheckIncome(price, Tikets, MainBalanceUSD, MainBalanceBTC):
+    def STOPLOSStakeprofit(price):
         for T in Tikets:
+            ZeroThreePercent = T['price'] / 100 * 0.3
             ThreePercent = T['price'] / 100 * 0.3
-            if T['price'] + ThreePercent < price:
+            if T['price'] + ZeroThreePercent < price:
                 Processes.SellProcess(price, MainBalanceUSD, MainBalanceBTC) 
-
+            elif price  > T['price'] + ThreePercent:
+                Processes.SellProcess(price, MainBalanceUSD, MainBalanceBTC)
     def CheckRandom(price):
         rand = random.randint(0, 100)
         if rand < 10:
@@ -225,7 +227,7 @@ def MainLoop():
             Indicators.RSI(price, prices, MainBalanceUSD, MainBalanceBTC, PartBalance)
             Indicators.Fibonachi(max(prices), min(prices), price)
             Indicators.CheckMedium(Medium, price, PartBalance)
-            Indicators.CheckIncome(price, Tikets, MainBalanceUSD, MainBalanceBTC)
+            Indicators.STOPLOSStakeprofit(price, Tikets, MainBalanceUSD, MainBalanceBTC)
             Indicators.CheckMinMax(price)
             Indicators.CheckRandom(price)
 
