@@ -38,12 +38,14 @@ Counter = 0
 
 class Indicators():
     def CheckMinMax(price):
+        #Easy process
         if price == min(prices):
             Processes.BuyProcess(price, PartBalance)
         if price == max(prices):
             Processes.SellProcess(price, MainBalanceUSD, MainBalanceBTC)
 
     def STOPLOSStakeprofit(price):
+        #Easy mechanism name say for what is it
         for T in Tikets:
             ZeroThreePercent = T['price'] / 100 * 0.3
             ThreePercent = T['price'] / 100 * 0.3
@@ -52,6 +54,7 @@ class Indicators():
             elif price  > T['price'] + ThreePercent:
                 Processes.SellProcess(price, MainBalanceUSD, MainBalanceBTC)
     def CheckRandom(price):
+        #Just for fun
         rand = random.randint(0, 100)
         if rand < 10:
             Processes.SellProcess(price, MainBalanceBTC, MainBalanceBTC)
@@ -59,6 +62,7 @@ class Indicators():
             Processes.BuyProcess(price, PartBalance)
 
     def Fibonachi(maxprice, minprice, price):
+        #Fibo need to think about that so situative Process
         diff = maxprice - minprice
         precent = diff / 100
 
@@ -87,6 +91,7 @@ class Indicators():
                 print("FIBONACHI - ", price)
 
     def RSI(price, prices, MainBalanceUSD, MainBalanceBTC, PartBalance):
+        #RSI Process need check errors because 50 can't be so often how it now
         global RSIs24, SummOfIncomePrices, RSIcounter, RSIs, SummOfLostPrices
 
         RSIcounter += 1
@@ -112,6 +117,7 @@ class Indicators():
                 Processes.BuyProcess(price, PartBalance)
 
     def CheckMedium(Medium, price, PartBalance):
+        #Need more work for and check information about EMA and MA
         if Medium > price - 3 and Medium < price + 5:
             Processes.BuyProcess(price, PartBalance)
 
@@ -121,6 +127,7 @@ class Indicators():
 class Processes():
 
     def MakingPlot():
+        #Making Graph need fix, for make read graph easy
         Times = range(0, Counter)
         
         plt.subplot(1, 2, 1)
@@ -132,6 +139,8 @@ class Processes():
 
 
     def TiketProcess(price, quantity):
+        #Make tiket for marks about when and how buy, need fix
+        #Fix for make read that easy, tablet or something
         print('Making new Tiket')
         time = datetime.now().strftime("%H:%M:%S")
         global Tikets
@@ -145,6 +154,7 @@ class Processes():
         Tikets.append(x)
 
     def SellProcess(price, MainBalanceUSD, MainBalanceBTC):
+        #Making Sell and check if system make error
         try:
             if len(Tikets) == 0:
                 quantityBTC = MainBalanceBTC
@@ -173,6 +183,7 @@ class Processes():
             print(MainBalanceUSD)
 
     def BuyProcess(price, PartBalance):
+        #Making Buy and check if system give error
         try:
             quantityBTC = math.floor(PartBalance / price * 100000) / 100000
             print('QT - ', quantityBTC, 'PartB - ', PartBalance)
@@ -217,13 +228,18 @@ class MainProcesses():
 
 
 def MainLoop():
+        #Taking data from user
         Samples = int(input('How many times check - '))
         Sec = int(input('What interval - '))
         while Samples != 0:
             Samples -= 1
+
+            #Making Data for processes
             x = MainProcesses()
             x.CollectData()
 
+
+            #Working Indicators
             Indicators.RSI(price, prices, MainBalanceUSD, MainBalanceBTC, PartBalance)
             Indicators.Fibonachi(max(prices), min(prices), price)
             Indicators.CheckMedium(Medium, price, PartBalance)
@@ -231,6 +247,7 @@ def MainLoop():
             Indicators.CheckMinMax(price)
             Indicators.CheckRandom(price)
 
+            #Just for tests and trash
             print(price)    
             print(Medium)
             time.sleep(Sec)
