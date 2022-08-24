@@ -1,6 +1,9 @@
 from concurrent.futures import process
 from multiprocessing.dummy import Process
+from statistics import median
+from urllib import request
 import requests
+import matplotlib.pyplot as plt
 import json, time, math, random
 from binance.spot import Spot
 from binance.client import Client
@@ -17,24 +20,72 @@ client = Client(key, secret)
 #Tiket
 count = 0
 Tikets = []
+
 # RSIs 
 SummOfIncomePrices = 1
 SummOfLostPrices = 1
 RSIs = []
 RSIcounter = 0
+RSIs24 = []
 
 
 #Main
-counter = 0
+
 priceWBuy = 0
 ZeroThreePercent = 0 
-
+Mediums = []
+Counter = 0
 
 class Indicators():
-    
+    def CheckMinMax(price):
+        if price == min(prices):
+            Processes.BuyProcess(price, PartBalance)
+        if price == max(prices):
+            Processes.SellProcess(price, MainBalanceUSD, MainBalanceBTC)
+
+    def CheckIncome(price, Tikets, MainBalanceUSD, MainBalanceBTC):
+        for T in Tikets:
+            ThreePercent = T['price'] / 100 * 0.3
+            if T['price'] + ThreePercent < price:
+                Processes.SellProcess(price, MainBalanceUSD, MainBalanceBTC) 
+
+    def CheckRandom(price):
+        rand = random.randint(0, 100)
+        if rand < 10:
+            Processes.SellProcess(price, MainBalanceBTC, MainBalanceBTC)
+        if rand > 90:
+            Processes.BuyProcess(price, PartBalance)
+
+    def Fibonachi(maxprice, minprice, price):
+        diff = maxprice - minprice
+        precent = diff / 100
+
+
+        Firstlevel = maxprice - 23.6 * precent
+        Secondlevel = maxprice - 38.2 * precent
+        Thirdlevel = maxprice - 50 * precent
+        Fourlevel = maxprice - 61.8 * precent
+        Final = maxprice
+        if MainBalanceUSD >= 10:
+            if price > Firstlevel - 5 and price < Firstlevel + 5:
+                Processes.BuyProcess(price, PartBalance)
+                print("FIBONACHI - ", price)
+
+            if price > Secondlevel - 5 and price < Secondlevel + 5:
+                Processes.SellProcess(price, MainBalanceUSD, MainBalanceBTC)
+                print("FIBONACHI - ", price)
+
+
+            if price > Thirdlevel - 5 and price < Thirdlevel + 5:
+                Processes.BuyProcess(price, PartBalance)
+                print("FIBONACHI - ", price)
+
+            if price > Fourlevel - 5 and price < Thirdlevel + 5:
+                Processes.SellProcess(price, MainBalanceUSD, MainBalanceBTC)
+                print("FIBONACHI - ", price)
 
     def RSI(price, prices, MainBalanceUSD, MainBalanceBTC, PartBalance):
-        global SummOfIncomePrices, RSIcounter, RSIs, SummOfLostPrices
+        global RSIs24, SummOfIncomePrices, RSIcounter, RSIs, SummOfLostPrices
 
         RSIcounter += 1
         if price > prices[len(prices) - 2]:
@@ -45,19 +96,38 @@ class Indicators():
         
         RSI = 100 - 100 / (1 + RS)
         print("RSI - {}".format(RSI))
+        RSIs24.append(RSI)
         RSIs.append(RSI)
-
-        if RSI <= 80 and RSI >= 70 and counter >= 15:
+        if len(RSIs) == 24:
+            SummOfIncomePrices = 1
+            SummOfLostPrices = 1
+            RSIs24 = [50]
+            
+        if RSI <= 80 and RSI >= 70 and Counter >= 15:
             Processes.SellProcess(price, MainBalanceUSD, MainBalanceBTC)
-        if MainBalanceUSD >= 10 and counter >= 15:
+        if MainBalanceUSD >= 10 and Counter >= 15:
             if RSI <= 35 and RSI >= 25:
                 Processes.BuyProcess(price, PartBalance)
 
-    def Madium(prices):
-        Medium = sum(prices) / len(prices)
-        return Medium
+    def CheckMedium(Medium, price, PartBalance):
+        if Medium > price - 3 and Medium < price + 5:
+            Processes.BuyProcess(price, PartBalance)
+
+
+    
 
 class Processes():
+
+    def MakingPlot():
+        Times = range(0, Counter)
+        
+        plt.subplot(1, 2, 1)
+        plt.plot(Times, prices)
+        plt.plot(Times, Mediums)
+        plt.subplot(1, 2, 2)
+        plt.plot(Times, RSIs)
+        plt.show()
+
 
     def TiketProcess(price, quantity):
         print('Making new Tiket')
@@ -120,29 +190,52 @@ class Processes():
         
 
 class MainProcesses():
+    
     def CollectData(self):
-        global prices, price, MainBalanceUSD, MainBalanceBTC, PartBalance
+        global Counter, Mediums, prices, price, MainBalanceUSD, Medium, MainBalanceBTC, PartBalance
+        
+        #Balance
         MainBalanceUSD = float(client.get_asset_balance(asset='USDT')['free'])
         MainBalanceBTC = client.get_asset_balance(asset='BTC')['free']
         PartBalance = round(MainBalanceUSD) / 2
         if PartBalance <= 10:
             PartBalance = MainBalanceUSD 
+        
+        #Data
         data = requests.get(KEY).json()
         price = round(float(data['price']), 3)
         prices.append(price)
+        Medium = requests.get("https://api.binance.com/api/v3/avgPrice", params=dict(symbol="BTCUSDT")).json()
+        Medium = round(float(Medium['price']), 2)
+        Mediums.append(Medium)
+
+        #Counter
+        Counter += 1
         
 
 
 def MainLoop():
-    c = 0
-    while True:
-        c += 1
-        x = MainProcesses()
-        x.CollectData()
-        Indicators.RSI(price, prices, MainBalanceUSD, MainBalanceBTC, PartBalance)
+        Samples = int(input('How many times check - '))
+        Sec = int(input('What interval - '))
+        while Samples != 0:
+            Samples -= 1
+            x = MainProcesses()
+            x.CollectData()
 
-        time.sleep(900)
+            Indicators.RSI(price, prices, MainBalanceUSD, MainBalanceBTC, PartBalance)
+            Indicators.Fibonachi(max(prices), min(prices), price)
+            Indicators.CheckMedium(Medium, price, PartBalance)
+            Indicators.CheckIncome(price, Tikets, MainBalanceUSD, MainBalanceBTC)
+            Indicators.CheckMinMax(price)
+            Indicators.CheckRandom(price)
+
+            print(price)    
+            print(Medium)
+            time.sleep(Sec)
+            
         
 
 MainLoop()
-print(Tikets)
+print('Done')
+Processes.MakingPlot()
+
