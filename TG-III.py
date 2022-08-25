@@ -30,7 +30,7 @@ RSIs24 = []
 
 
 #Main
-
+MainBalancesUSD = []
 priceWBuy = 0
 ZeroThreePercent = 0 
 Mediums = []
@@ -125,6 +125,18 @@ class Indicators():
     
 
 class Processes():
+    def SellAll(price):
+        for T in Tikets:
+                if T['sold'] == False:
+                    T['sold'] = True
+                    quantityBTC = T['quantity']        
+                    order = client.create_order(
+                        symbol='BTCUSDT',
+                        side=Client.SIDE_SELL,
+                        type=Client.ORDER_TYPE_MARKET,
+                        quantity = quantityBTC
+                        )
+                    print("Was sold 0.00054 BTC by price {}".format(float(price)))
 
     def MakingPlot():
         #Making Graph need fix, for make read graph easy
@@ -205,15 +217,17 @@ class Processes():
 class MainProcesses():
     
     def CollectData(self):
-        global Counter, Mediums, prices, price, MainBalanceUSD, Medium, MainBalanceBTC, PartBalance
+        global Income, Counter, Mediums, prices, price, MainBalanceUSD, Medium, MainBalanceBTC, PartBalance
         
         #Balance
+        
         MainBalanceUSD = float(client.get_asset_balance(asset='USDT')['free'])
         MainBalanceBTC = client.get_asset_balance(asset='BTC')['free']
+        MainBalancesUSD.append(MainBalanceUSD) 
         PartBalance = round(MainBalanceUSD) / 2
         if PartBalance <= 10:
             PartBalance = MainBalanceUSD 
-        
+        Income = MainBalancesUSD[0] / MainBalancesUSD[-1]
         #Data
         data = requests.get(KEY).json()
         price = round(float(data['price']), 3)
@@ -228,6 +242,7 @@ class MainProcesses():
 
 
 def MainLoop():
+
         #Taking data from user
         Samples = int(input('How many times check - '))
         Sec = int(input('What interval - '))
@@ -243,18 +258,21 @@ def MainLoop():
             Indicators.RSI(price, prices, MainBalanceUSD, MainBalanceBTC, PartBalance)
             Indicators.Fibonachi(max(prices), min(prices), price)
             Indicators.CheckMedium(Medium, price, PartBalance)
-            Indicators.STOPLOSStakeprofit(price, Tikets, MainBalanceUSD, MainBalanceBTC)
+            Indicators.STOPLOSStakeprofit(price)
             Indicators.CheckMinMax(price)
             Indicators.CheckRandom(price)
 
             #Just for tests and trash
             print(price)    
             print(Medium)
-            time.sleep(Sec)
             
-        
+            time.sleep(Sec)
+
 
 MainLoop()
+Processes.SellAll(price)
 print('Done')
+print(Income)
+
 Processes.MakingPlot()
 
